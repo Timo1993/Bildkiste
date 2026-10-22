@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Sperre: Die Seite darf keinerlei Verbindungen nach außen aufbauen -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="theme-color" content="#2F6F5E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bildkiste">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Bildkiste</title>
+<style>
+:root{
+  --bg:#EEF1F4;--surface:#FFFFFF;--ink:#1E2A38;--muted:#5C6B7A;--line:#D5DCE3;
+  --accent:#2F6F5E;--accent-ink:#FFFFFF;--tag:#DCEAE4;--tag-ink:#1F4A3F;
+  --tag-on:#2F6F5E;--tag-on-ink:#FFFFFF;--danger:#A8322A;
+  --shadow:0 1px 2px rgba(30,42,56,.08),0 8px 24px rgba(30,42,56,.12);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#121920;--surface:#1B242D;--ink:#E4EAEF;--muted:#94A3B1;--line:#2C3844;
+    --accent:#7CC7AE;--accent-ink:#0F2A22;--tag:#23362F;--tag-ink:#B9E3D3;
+    --tag-on:#7CC7AE;--tag-on-ink:#0F2A22;--danger:#F0857B;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.4);
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  -webkit-tap-highlight-color:transparent;
+  padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{
+  position:sticky;top:0;z-index:5;background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 10px;
+  border-bottom:1px solid var(--line);
+}
+.wrap{max-width:1100px;margin:0 auto}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1,h2{font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round",system-ui,sans-serif;letter-spacing:-.01em}
+h1{font-size:1.65rem;font-weight:700;margin:0;line-height:1.1}
+.count{color:var(--muted);font-size:.9rem;font-weight:500;margin-left:.55em;font-family:system-ui,sans-serif;letter-spacing:0}
+
+.icon-btn{
+  width:44px;height:44px;display:grid;place-items:center;flex:none;
+  border:0;border-radius:12px;background:transparent;cursor:pointer;
+}
+.icon-btn:hover{background:var(--line)}
+.icon-btn.danger{color:var(--danger)}
+
+.search{position:relative;margin-top:10px}
+.search input{
+  width:100%;font:inherit;color:var(--ink);background:var(--surface);
+  padding:.7em .9em .7em 2.5em;border:1px solid var(--line);border-radius:12px;
+  -webkit-appearance:none;appearance:none;
+}
+.search input::placeholder{color:var(--muted)}
+.search svg{position:absolute;left:.85em;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+
+.chips{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+
+/* Tags als kleine Gepäckanhänger */
+.tag{
+  --hole:var(--bg);
+  position:relative;display:inline-flex;align-items:center;gap:.35em;flex:none;
+  font-size:.88rem;line-height:1;white-space:nowrap;cursor:pointer;
+  padding:.55em .8em .55em 1.4em;border:0;
+  background:var(--tag);color:var(--tag-ink);
+  clip-path:polygon(.7em 0,100% 0,100% 100%,.7em 100%,0 50%);
+  border-radius:0 .45em .45em 0;
+}
+.tag::before{
+  content:"";position:absolute;left:.66em;top:50%;
+  width:.38em;height:.38em;margin-top:-.19em;border-radius:50%;background:var(--hole);
+}
+.tag[aria-pressed="true"]{background:var(--tag-on);color:var(--tag-on-ink)}
+.tag:focus-visible{outline:0;box-shadow:inset 0 0 0 2px var(--ink)}
+.tag .n{opacity:.62;font-size:.86em}
+.tag .x{font-size:1.15em;opacity:.7;margin-left:.1em}
+.tag.plain{font-style:italic}
+
+main{padding:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px}
+.cell{
+  position:relative;aspect-ratio:1;padding:0;border:0;border-radius:6px;overflow:hidden;
+  background:var(--line);cursor:pointer;display:block;width:100%;
+}
+.cell img{width:100%;height:100%;object-fit:cover;display:block}
+.cell .untag{
+  position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 0 2px var(--surface);
+}
+
+.empty{max-width:34em;margin:12vh auto 0;text-align:center;color:var(--muted);padding:0 16px}
+.empty h2{color:var(--ink);font-size:1.3rem;margin:0 0 .4em}
+.empty p{margin:0 0 1em}
+
+.add{
+  position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;
+  display:inline-flex;align-items:center;gap:.5em;
+  padding:.9em 1.25em;border:0;border-radius:999px;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);font-weight:600;box-shadow:var(--shadow);
+}
+
+.btn{
+  font:inherit;padding:.7em 1.1em;border-radius:10px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.link{border:0;background:none;color:var(--accent);padding:.4em;text-decoration:underline}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:18px}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:20;
+  transform:translateX(-50%);max-width:calc(100vw - 32px);
+  background:var(--ink);color:var(--bg);padding:.6em 1em;border-radius:10px;font-size:.92rem;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.toast.show{opacity:1}
+
+dialog{
+  border:0;padding:0;color:var(--ink);background:var(--surface);
+  border-radius:16px;box-shadow:var(--shadow);
+  width:calc(100vw - 24px);max-width:520px;
+}
+dialog::backdrop{background:rgba(8,12,16,.6)}
+.sheet{padding:20px}
+.sheet h2{font-size:1.25rem;margin:0 0 .4em}
+.sheet p{margin:.4em 0;color:var(--muted)}
+.sheet .stack{display:grid;gap:8px;margin-top:14px}
+
+.tag-editor{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);
+}
+.tag-editor .tag{--hole:var(--surface)}
+.tag-editor input{
+  flex:1;min-width:9em;font:inherit;color:var(--ink);background:transparent;
+  border:0;outline:0;padding:.35em .2em;
+}
+.tag-editor input::placeholder{color:var(--muted)}
+.tag-editor:focus-within{border-color:var(--accent)}
+
+.viewer{
+  width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;
+  margin:0;border-radius:0;background:var(--bg);box-shadow:none;
+}
+.viewer[open]{display:flex;flex-direction:column}
+.v-top{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:calc(env(safe-area-inset-top,0px) + 6px) 8px 6px;
+}
+.v-top span{color:var(--muted);font-size:.9rem}
+.v-stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:0 8px}
+.v-stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;user-select:none;-webkit-user-select:none}
+.nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;
+  background:var(--surface);color:var(--ink);box-shadow:var(--shadow);opacity:.92;
+}
+.nav.prev{left:10px}.nav.next{right:10px}
+.nav:disabled{visibility:hidden}
+.v-bottom{width:100%;max-width:720px;margin:0 auto;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))}
+.v-bottom p{margin:0 0 6px;font-size:.85rem;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="title-row">
+      <h1>Bildkiste<span class="count" id="count"></span></h1>
+      <button class="icon-btn" id="menuBtn" type="button" aria-label="Speicher und Sicherung">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Nach Tags suchen" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" aria-label="Nach Tags suchen">
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Nach Tag filtern" hidden></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden></div>
+</main>
+
+<button class="add" id="addBtn" type="button">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+  Bilder hinzufügen
+</button>
+<input type="file" id="file" accept="image/*" multiple hidden>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<datalist id="alltags"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Bildansicht -->
+<dialog id="viewer" class="viewer" aria-label="Bildansicht">
+  <div class="v-top">
+    <button class="icon-btn" id="vClose" type="button" aria-label="Schließen">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <span id="vCount"></span>
+    <button class="icon-btn danger" id="vDel" type="button" aria-label="Bild löschen">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+    </button>
+  </div>
+  <div class="v-stage" id="vStage">
+    <img id="vImg" alt="">
+    <button class="nav prev" id="vPrev" type="button" aria-label="Vorheriges Bild">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <button class="nav next" id="vNext" type="button" aria-label="Nächstes Bild">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+  <div class="v-bottom">
+    <p>Tags – mit Enter oder Komma bestätigen, antippen zum Entfernen</p>
+    <div class="tag-editor" id="vEditor"></div>
+  </div>
+</dialog>
+
+<!-- Tags für neu hinzugefügte Bilder -->
+<dialog id="batch" class="sheet" aria-labelledby="batchTitle">
+  <h2 id="batchTitle"></h2>
+  <p>Diese Tags bekommen alle neuen Bilder. Einzelne Bilder kannst du später noch anpassen.</p>
+  <div class="tag-editor" id="bEditor" style="margin-top:12px"></div>
+  <div class="row">
+    <button class="btn" id="bSkip" type="button">Überspringen</button>
+    <button class="btn primary" id="bSave" type="button">Tags speichern</button>
+  </div>
+</dialog>
+
+<!-- Speicher & Sicherung -->
+<dialog id="menu" class="sheet" aria-labelledby="menuTitle">
+  <h2 id="menuTitle">Speicher und Sicherung</h2>
+  <p id="storageInfo">Speicher wird geprüft …</p>
+  <p>Deine Bilder liegen nur in diesem Browser auf diesem Gerät und werden nirgendwohin gesendet. Wenn du die Browserdaten löschst oder die App entfernst, sind sie weg – erstelle deshalb ab und zu eine Sicherung.</p>
+  <div class="stack">
+    <button class="btn" id="exportBtn" type="button">Sicherung exportieren</button>
+    <button class="btn" id="importBtn" type="button">Sicherung importieren</button>
+  </div>
+  <div class="row"><button class="btn primary" id="menuClose" type="button">Schließen</button></div>
+</dialog>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const grid = $("#grid"), chips = $("#chips"), empty = $("#empty"), q = $("#q");
+const viewer = $("#viewer"), vImg = $("#vImg");
+
+const state = { items: [], selected: new Set(), untagged: false, view: [] };
+const thumbUrls = new Map();
+let db;
+
+/* ---------- Hilfsfunktionen ---------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const norm = t => String(t).replace(/\s+/g, " ").trim().replace(/^#+/, "");
+const key = t => norm(t).toLocaleLowerCase("de");
+function addTagTo(tags, t) {
+  t = norm(t);
+  if (!t || tags.some(x => key(x) === key(t))) return false;
+  tags.push(t);
+  return true;
+}
+const plural = (n, one, many) => n === 1 ? `1 ${one}` : `${n} ${many}`;
+
+let toastTimer;
+function toast(msg, sticky) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  if (!sticky) toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+const hideToast = () => $("#toast").classList.remove("show");
+
+/* ---------- Datenbank (IndexedDB, nur lokal) ---------- */
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("bildkiste", 1);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      d.createObjectStore("meta", { keyPath: "id" }); // id, name, created, tags, thumb
+      d.createObjectStore("full");                     // Originalbild je id
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+function txDone(t) {
+  return new Promise((res, rej) => {
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error("Abgebrochen"));
+  });
+}
+const getAllMeta = () => reqP(db.transaction("meta").objectStore("meta").getAll());
+const getFull = id => reqP(db.transaction("full").objectStore("full").get(id));
+function putImage(meta, blob) {
+  const t = db.transaction(["meta", "full"], "readwrite");
+  t.objectStore("meta").put(meta);
+  t.objectStore("full").put(blob, meta.id);
+  return txDone(t);
+}
+function putMeta(meta) {
+  const t = db.transaction("meta", "readwrite");
+  t.objectStore("meta").put(meta);
+  return txDone(t);
+}
+function deleteImage(id) {
+  const t = db.transaction(["meta", "full"], "readwrite");
+  t.objectStore("meta").delete(id);
+  t.objectStore("full").delete(id);
+  return txDone(t);
+}
+async function requestPersist() {
+  try {
+    if (navigator.storage && navigator.storage.persist && !(await navigator.storage.persisted()))
+      await navigator.storage.persist();
+  } catch (e) {}
+}
+
+/* ---------- Bilder ---------- */
+function loadImg(blob) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(blob), i = new Image();
+    i.onload = () => { res(i); setTimeout(() => URL.revokeObjectURL(u), 0); };
+    i.onerror = () => { URL.revokeObjectURL(u); rej(new Error("Bild nicht lesbar")); };
+    i.src = u;
+  });
+}
+async function makeThumb(blob) {
+  let src;
+  try { src = await createImageBitmap(blob, { imageOrientation: "from-image" }); }
+  catch (e) { src = await loadImg(blob); }
+  const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height;
+  const s = Math.min(1, 480 / Math.max(w, h));
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w * s));
+  c.height = Math.max(1, Math.round(h * s));
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  if (src.close) src.close();
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error("Vorschau fehlgeschlagen")), "image/jpeg", 0.82));
+}
+function thumbUrl(it) {
+  let u = thumbUrls.get(it.id);
+  if (!u) { u = URL.createObjectURL(it.thumb); thumbUrls.set(it.id, u); }
+  return u;
+}
+
+/* ---------- Suche & Filter ---------- */
+function filtered() {
+  const words = key(q.value).split(" ").filter(Boolean);
+  const sel = [...state.selected];
+  return state.items.filter(it => {
+    const keys = it.tags.map(key);
+    if (state.untagged && keys.length) return false;
+    if (!sel.every(s => keys.includes(s))) return false;
+    if (!words.length) return true;
+    const parts = keys.concat(keys.flatMap(k => k.split(" ")));
+    return words.every(w => parts.some(p => p.startsWith(w)));
+  }).sort((a, b) => b.created - a.created);
+}
+function tagIndex() {
+  const m = new Map();
+  for (const it of state.items) for (const t of it.tags) {
+    const k = key(t), e = m.get(k);
+    if (e) e.n++; else m.set(k, { name: t, n: 1 });
+  }
+  return m;
+}
+
+/* ---------- Darstellung ---------- */
+function chip(label, n, pressed, onClick, plain) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "tag" + (plain ? " plain" : "");
+  b.setAttribute("aria-pressed", String(pressed));
+  const l = document.createElement("span"); l.textContent = label;
+  const c = document.createElement("span"); c.className = "n"; c.textContent = n;
+  b.append(l, c);
+  b.onclick = onClick;
+  return b;
+}
+function renderChips(m) {
+  for (const k of [...state.selected]) if (!m.has(k)) state.selected.delete(k);
+  const untaggedN = state.items.filter(i => !i.tags.length).length;
+  if (!untaggedN) state.untagged = false;
+  const list = [...m.entries()].sort((a, b) =>
+    (state.selected.has(b[0]) - state.selected.has(a[0])) || (b[1].n - a[1].n) || a[1].name.localeCompare(b[1].name, "de"));
+  const nodes = [];
+  if (untaggedN) nodes.push(chip("Ohne Tags", untaggedN, state.untagged, () => { state.untagged = !state.untagged; refresh(); }, true));
+  for (const [k, { name, n }] of list)
+    nodes.push(chip(name, n, state.selected.has(k), () => {
+      state.selected.has(k) ? state.selected.delete(k) : state.selected.add(k);
+      refresh();
+    }));
+  chips.replaceChildren(...nodes);
+  chips.hidden = !nodes.length;
+}
+function renderGrid() {
+  grid.replaceChildren(...state.view.map((it, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cell";
+    b.setAttribute("aria-label", it.tags.length ? "Bild: " + it.tags.join(", ") : "Bild ohne Tags");
+    const img = new Image();
+    img.loading = "lazy"; img.decoding = "async"; img.alt = "";
+    img.src = thumbUrl(it);
+    b.append(img);
+    if (!it.tags.length) { const d = document.createElement("span"); d.className = "untag"; b.append(d); }
+    b.onclick = () => openViewer(i);
+    return b;
+  }));
+}
+function renderEmpty() {
+  empty.replaceChildren();
+  if (state.view.length) { empty.hidden = true; return; }
+  empty.hidden = false;
+  const h = document.createElement("h2"), p = document.createElement("p");
+  if (!state.items.length) {
+    h.textContent = "Noch keine Bilder";
+    p.textContent = "Tippe auf „Bilder hinzufügen“, um Fotos aus deiner Galerie zu laden. Sie bleiben ausschließlich auf diesem Gerät.";
+    empty.append(h, p);
+  } else {
+    h.textContent = "Keine passenden Bilder";
+    p.textContent = "Kein Bild hat alle gewählten Tags.";
+    const r = document.createElement("button");
+    r.type = "button"; r.className = "btn"; r.textContent = "Filter zurücksetzen";
+    r.onclick = () => { q.value = ""; state.selected.clear(); state.untagged = false; refresh(); };
+    empty.append(h, p, r);
+  }
+}
+function refresh() {
+  state.view = filtered();
+  const m = tagIndex();
+  const n = state.items.length, v = state.view.length;
+  $("#count").textContent = !n ? "" : v === n ? plural(n, "Bild", "Bilder") : `${v} von ${n}`;
+  renderChips(m);
+  renderGrid();
+  renderEmpty();
+  $("#alltags").replaceChildren(...[...m.values()].map(e => { const o = document.createElement("option"); o.value = e.name; return o; }));
+}
+
+/* ---------- Tag-Eingabe ---------- */
+function tagEditor(box, tags, onChange) {
+  box.replaceChildren();
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Tag hinzufügen …";
+  input.setAttribute("list", "alltags");
+  input.setAttribute("autocomplete", "off");
+  input.setAttribute("enterkeyhint", "done");
+  input.setAttribute("aria-label", "Neuer Tag");
+  const draw = () => {
+    box.querySelectorAll(".tag").forEach(n => n.remove());
+    tags.forEach((t, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tag";
+      b.setAttribute("aria-label", `Tag „${t}“ entfernen`);
+      const l = document.createElement("span"); l.textContent = t;
+      const x = document.createElement("span"); x.className = "x"; x.textContent = "×"; x.setAttribute("aria-hidden", "true");
+      b.append(l, x);
+      b.onclick = () => { tags.splice(i, 1); draw(); onChange(tags); };
+      box.insertBefore(b, input);
+    });
+  };
+  const commit = () => {
+    let changed = false;
+    input.value.split(",").forEach(p => { if (addTagTo(tags, p)) changed = true; });
+    input.value = "";
+    if (changed) { draw(); onChange(tags); }
+  };
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); commit(); }
+    else if (e.key === "Backspace" && !input.value && tags.length) { tags.pop(); draw(); onChange(tags); }
+  });
+  input.addEventListener("input", () => { if (input.value.includes(",")) commit(); });
+  input.addEventListener("blur", commit);
+  box.append(input);
+  draw();
+  return { commit, input };
+}
+
+/* ---------- Bildansicht ---------- */
+let vList = [], vCur = 0, fullUrl = null, vEditor = null;
+async function openViewer(i) {
+  vList = state.view.slice();
+  vCur = i;
+  await showCurrent();
+  if (!viewer.open) viewer.showModal();
+}
+async function showCurrent() {
+  const it = vList[vCur];
+  if (!it) { viewer.close(); return; }
+  const blob = await getFull(it.id);
+  if (fullUrl) URL.revokeObjectURL(fullUrl);
+  fullUrl = blob ? URL.createObjectURL(blob) : null;
+  vImg.src = fullUrl || thumbUrl(it);
+  vImg.alt = it.tags.length ? it.tags.join(", ") : "Bild ohne Tags";
+  $("#vCount").textContent = `${vCur + 1} von ${vList.length}`;
+  $("#vPrev").disabled = vCur === 0;
+  $("#vNext").disabled = vCur === vList.length - 1;
+  vEditor = tagEditor($("#vEditor"), it.tags, async () => {
+    try { await putMeta(it); } catch (e) { toast("Tags konnten nicht gespeichert werden."); }
+    vImg.alt = it.tags.length ? it.tags.join(", ") : "Bild ohne Tags";
+    refresh();
+  });
+}
+function step(d) {
+  const n = vCur + d;
+  if (n < 0 || n >= vList.length) return;
+  if (vEditor) vEditor.commit();
+  vCur = n;
+  showCurrent();
+}
+$("#vPrev").onclick = () => step(-1);
+$("#vNext").onclick = () => step(1);
+$("#vClose").onclick = () => viewer.close();
+viewer.addEventListener("close", () => {
+  if (vEditor) vEditor.commit();
+  if (fullUrl) { URL.revokeObjectURL(fullUrl); fullUrl = null; }
+  vImg.removeAttribute("src");
+  refresh();
+});
+viewer.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowLeft") step(-1);
+  if (e.key === "ArrowRight") step(1);
+});
+let touchX = null;
+$("#vStage").addEventListener("touchstart", e => { touchX = e.touches[0].clientX; }, { passive: true });
+$("#vStage").addEventListener("touchend", e => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  touchX = null;
+  if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+});
+$("#vDel").onclick = async () => {
+  const it = vList[vCur];
+  if (!it || !confirm("Dieses Bild endgültig löschen?")) return;
+  try { await deleteImage(it.id); } catch (e) { toast("Löschen fehlgeschlagen."); return; }
+  const u = thumbUrls.get(it.id);
+  if (u) { URL.revokeObjectURL(u); thumbUrls.delete(it.id); }
+  state.items = state.items.filter(x => x.id !== it.id);
+  vList.splice(vCur, 1);
+  toast("Bild gelöscht.");
+  if (!vList.length) { viewer.close(); return; }
+  vCur = Math.min(vCur, vList.length - 1);
+  refresh();
+  showCurrent();
+};
+
+/* ---------- Bilder hinzufügen ---------- */
+$("#addBtn").onclick = () => $("#file").click();
+$("#file").addEventListener("change", async e => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+  requestPersist();
+  const ids = [];
+  let failed = 0;
+  for (let i = 0; i < files.length; i++) {
+    toast(`Speichere ${i + 1} von ${files.length} …`, true);
+    const f = files[i];
+    try {
+      const blob = new Blob([f], { type: f.type || "image/jpeg" });
+      const thumb = await makeThumb(blob);
+      const meta = { id: uid(), name: f.name, created: Date.now(), tags: [], thumb };
+      await putImage(meta, blob);
+      state.items.push(meta);
+      ids.push(meta.id);
+    } catch (err) { failed++; }
+  }
+  hideToast();
+  refresh();
+  if (failed) toast(`${plural(failed, "Datei konnte", "Dateien konnten")} nicht gelesen werden.`);
+  if (ids.length) openBatch(ids);
+});
+
+function openBatch(ids) {
+  const dlg = $("#batch"), tags = [];
+  $("#batchTitle").textContent = plural(ids.length, "Bild", "Bilder") + " hinzugefügt";
+  const ed = tagEditor($("#bEditor"), tags, () => {});
+  $("#bSkip").onclick = () => dlg.close();
+  $("#bSave").onclick = async () => {
+    ed.commit();
+    if (tags.length) {
+      for (const id of ids) {
+        const it = state.items.find(x => x.id === id);
+        if (!it) continue;
+        tags.forEach(t => addTagTo(it.tags, t));
+        try { await putMeta(it); } catch (e) {}
+      }
+      refresh();
+      toast("Tags gespeichert.");
+    }
+    dlg.close();
+  };
+  dlg.showModal();
+}
+
+/* ---------- Speicher & Sicherung ---------- */
+$("#menuBtn").onclick = async () => {
+  $("#menu").showModal();
+  const info = $("#storageInfo");
+  let txt = plural(state.items.length, "Bild", "Bilder") + " gespeichert.";
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const { usage } = await navigator.storage.estimate();
+      if (usage != null) txt += ` Belegt: ${(usage / 1048576).toFixed(1).replace(".", ",")} MB.`;
+    }
+    if (navigator.storage && navigator.storage.persisted)
+      txt += (await navigator.storage.persisted())
+        ? " Der Browser hält die Daten dauerhaft vor."
+        : " Der Browser könnte die Daten bei Speichermangel löschen.";
+  } catch (e) {}
+  info.textContent = txt;
+};
+$("#menuClose").onclick = () => $("#menu").close();
+
+const toDataURL = b => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result);
+  r.onerror = () => rej(r.error);
+  r.readAsDataURL(b);
+});
+function dataURLtoBlob(u) {
+  const i = u.indexOf(",");
+  const type = (u.slice(0, i).match(/data:([^;,]+)/) || [])[1] || "image/jpeg";
+  const bin = atob(u.slice(i + 1));
+  const arr = new Uint8Array(bin.length);
+  for (let j = 0; j < bin.length; j++) arr[j] = bin.charCodeAt(j);
+  return new Blob([arr], { type });
+}
+
+$("#exportBtn").onclick = async () => {
+  if (!state.items.length) { toast("Es gibt noch nichts zu sichern."); return; }
+  try {
+    const out = { app: "bildkiste", version: 1, exported: new Date().toISOString(), images: [] };
+    let i = 0;
+    for (const it of state.items) {
+      toast(`Sicherung: ${++i} von ${state.items.length} …`, true);
+      const b = await getFull(it.id);
+      out.images.push({ id: it.id, name: it.name, created: it.created, tags: it.tags, data: b ? await toDataURL(b) : null });
+    }
+    const blob = new Blob([JSON.stringify(out)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `bildkiste-sicherung-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    toast("Sicherung exportiert.");
+  } catch (e) {
+    toast("Sicherung fehlgeschlagen – eventuell ist das Gerät zu knapp an Speicher.");
+  }
+};
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (err) { data = null; }
+  if (!data || data.app !== "bildkiste" || !Array.isArray(data.images)) {
+    toast("Das ist keine Sicherung aus der Bildkiste.");
+    return;
+  }
+  const have = new Set(state.items.map(i => i.id));
+  let added = 0, skipped = 0;
+  for (const x of data.images) {
+    if (!x || !x.data || have.has(x.id)) { skipped++; continue; }
+    try {
+      toast(`Importiere ${added + 1} …`, true);
+      const blob = dataURLtoBlob(x.data);
+      const thumb = await makeThumb(blob);
+      const tags = [];
+      (Array.isArray(x.tags) ? x.tags : []).forEach(t => addTagTo(tags, t));
+      const meta = { id: x.id || uid(), name: x.name || "", created: Number(x.created) || Date.now(), tags, thumb };
+      await putImage(meta, blob);
+      state.items.push(meta);
+      added++;
+    } catch (err) { skipped++; }
+  }
+  refresh();
+  toast(`${plural(added, "Bild", "Bilder")} importiert` + (skipped ? `, ${skipped} übersprungen.` : "."));
+  $("#menu").close();
+});
+
+/* ---------- Start ---------- */
+q.addEventListener("input", refresh);
+
+(async () => {
+  try {
+    db = await openDB();
+    state.items = await getAllMeta();
+  } catch (e) {
+    empty.hidden = false;
+    empty.textContent = "Der Speicher dieses Browsers ist nicht verfügbar. Im privaten Modus oder bei manchen Browsern, die Dateien direkt vom Gerät öffnen, kann die Bildkiste nichts speichern.";
+    $("#addBtn").disabled = true;
+    return;
+  }
+  refresh();
+})();
+
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
