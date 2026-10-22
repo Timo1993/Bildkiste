@@ -1,5 +1,5 @@
 // Speichert nur die App selbst für den Offline-Betrieb. Bilder werden nie übers Netz geladen oder gesendet.
-const CACHE = "bildkiste-v1";
+const CACHE = "bildkiste-v2";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

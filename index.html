@@ -30,6 +30,7 @@
   }
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{
   background:var(--bg);color:var(--ink);
@@ -37,17 +38,17 @@ body{
   -webkit-tap-highlight-color:transparent;
   padding-bottom:calc(100px + env(safe-area-inset-bottom,0px));
 }
-button{font:inherit;color:inherit}
+button,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 header{
   position:sticky;top:0;z-index:5;background:var(--bg);
-  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 10px;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 8px;
   border-bottom:1px solid var(--line);
 }
 .wrap{max-width:1100px;margin:0 auto}
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-h1,h2{font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round",system-ui,sans-serif;letter-spacing:-.01em}
+h1,h2,h3{font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round",system-ui,sans-serif;letter-spacing:-.01em}
 h1{font-size:1.65rem;font-weight:700;margin:0;line-height:1.1}
 .count{color:var(--muted);font-size:.9rem;font-weight:500;margin-left:.55em;font-family:system-ui,sans-serif;letter-spacing:0}
 
@@ -67,7 +68,18 @@ h1{font-size:1.65rem;font-weight:700;margin:0;line-height:1.1}
 .search input::placeholder{color:var(--muted)}
 .search svg{position:absolute;left:.85em;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
 
-.chips{display:flex;gap:6px;overflow-x:auto;margin-top:10px;padding-bottom:2px;scrollbar-width:none}
+/* Kategorien als Reiter */
+.cats{display:flex;gap:20px;overflow-x:auto;margin-top:6px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cats button{
+  flex:none;border:0;background:none;cursor:pointer;white-space:nowrap;
+  padding:.55em 0 .45em;border-bottom:2px solid transparent;color:var(--muted);font-size:.95rem;
+}
+.cats button[aria-current="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.cats .n{font-size:.82em;opacity:.7;margin-left:.3em;font-weight:400}
+.cats .new{color:var(--accent)}
+
+.chips{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 
 /* Tags als kleine Gepäckanhänger */
@@ -106,20 +118,34 @@ main{padding:12px}
 .empty h2{color:var(--ink);font-size:1.3rem;margin:0 0 .4em}
 .empty p{margin:0 0 1em}
 
-.add{
+.fab{
   position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;
-  display:inline-flex;align-items:center;gap:.5em;
-  padding:.9em 1.25em;border:0;border-radius:999px;cursor:pointer;
-  background:var(--accent);color:var(--accent-ink);font-weight:600;box-shadow:var(--shadow);
+  display:flex;gap:8px;
 }
+.fab button{
+  display:inline-flex;align-items:center;gap:.5em;
+  padding:.9em 1.2em;border-radius:999px;cursor:pointer;font-weight:600;box-shadow:var(--shadow);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+}
+.fab button.main{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 
 .btn{
   font:inherit;padding:.7em 1.1em;border-radius:10px;cursor:pointer;
   border:1px solid var(--line);background:var(--surface);color:var(--ink);
 }
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
-.btn.link{border:0;background:none;color:var(--accent);padding:.4em;text-decoration:underline}
+.btn.small{padding:.45em .8em;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:default}
 .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:18px}
+.row.left{justify-content:flex-start;margin-top:10px}
+
+.field{display:grid;gap:4px;margin:12px 0 0}
+.field > span{font-size:.85rem;color:var(--muted)}
+.field.inline{grid-template-columns:auto 1fr;align-items:center;gap:10px;margin:0 0 10px}
+select{
+  width:100%;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:.55em .7em;
+}
 
 .toast{
   position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:20;
@@ -135,10 +161,17 @@ dialog{
   width:calc(100vw - 24px);max-width:520px;
 }
 dialog::backdrop{background:rgba(8,12,16,.6)}
-.sheet{padding:20px}
+.sheet{padding:20px;max-height:calc(100dvh - 24px);overflow:auto}
 .sheet h2{font-size:1.25rem;margin:0 0 .4em}
+.sheet h3{font-size:1.05rem;margin:1.2em 0 .3em}
 .sheet p{margin:.4em 0;color:var(--muted)}
 .sheet .stack{display:grid;gap:8px;margin-top:14px}
+.b-thumb{display:block;max-height:150px;max-width:100%;border-radius:8px;margin:10px 0 0}
+
+.catlist{list-style:none;margin:8px 0 10px;padding:0;display:grid;gap:6px}
+.catlist li{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.catlist li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.catlist li small{color:var(--muted)}
 
 .tag-editor{
   display:flex;flex-wrap:wrap;gap:6px;align-items:center;
@@ -152,16 +185,18 @@ dialog::backdrop{background:rgba(8,12,16,.6)}
 .tag-editor input::placeholder{color:var(--muted)}
 .tag-editor:focus-within{border-color:var(--accent)}
 
-.viewer{
+/* Vollbild-Ansichten */
+.full{
   width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;
   margin:0;border-radius:0;background:var(--bg);box-shadow:none;
 }
-.viewer[open]{display:flex;flex-direction:column}
+.full[open]{display:flex;flex-direction:column}
 .v-top{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:calc(env(safe-area-inset-top,0px) + 6px) 8px 6px;
 }
 .v-top span{color:var(--muted);font-size:.9rem}
+.v-top .group{display:flex;gap:2px}
 .v-stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:0 8px}
 .v-stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;user-select:none;-webkit-user-select:none}
 .nav{
@@ -174,6 +209,14 @@ dialog::backdrop{background:rgba(8,12,16,.6)}
 .v-bottom{width:100%;max-width:720px;margin:0 auto;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))}
 .v-bottom p{margin:0 0 6px;font-size:.85rem;color:var(--muted)}
 
+/* Scanner */
+#sCanvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;cursor:crosshair}
+#sResult{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px}
+#sResult canvas{max-width:100%;max-height:100%;border-radius:4px;box-shadow:var(--shadow)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:none;padding:.65em .4em;cursor:pointer;color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 </head>
@@ -183,14 +226,15 @@ dialog::backdrop{background:rgba(8,12,16,.6)}
   <div class="wrap">
     <div class="title-row">
       <h1>Bildkiste<span class="count" id="count"></span></h1>
-      <button class="icon-btn" id="menuBtn" type="button" aria-label="Speicher und Sicherung">
+      <button class="icon-btn" id="menuBtn" type="button" aria-label="Kategorien, Speicher und Sicherung">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
     </div>
     <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Nach Tags suchen" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" aria-label="Nach Tags suchen">
+      <input id="q" type="search" placeholder="Nach Tags oder Kategorie suchen" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" aria-label="Suchen">
     </div>
+    <nav class="cats" id="cats" aria-label="Kategorie" hidden></nav>
     <div class="chips" id="chips" role="group" aria-label="Nach Tag filtern" hidden></div>
   </div>
 </header>
@@ -200,25 +244,37 @@ dialog::backdrop{background:rgba(8,12,16,.6)}
   <div class="empty" id="empty" hidden></div>
 </main>
 
-<button class="add" id="addBtn" type="button">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-  Bilder hinzufügen
-</button>
+<div class="fab">
+  <button id="galleryBtn" type="button">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-9 9"/></svg>
+    Galerie
+  </button>
+  <button id="scanBtn" class="main" type="button">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3.2"/></svg>
+    Scannen
+  </button>
+</div>
 <input type="file" id="file" accept="image/*" multiple hidden>
+<input type="file" id="camera" accept="image/*" capture="environment" hidden>
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <datalist id="alltags"></datalist>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- Bildansicht -->
-<dialog id="viewer" class="viewer" aria-label="Bildansicht">
+<dialog id="viewer" class="full" aria-label="Bildansicht">
   <div class="v-top">
     <button class="icon-btn" id="vClose" type="button" aria-label="Schließen">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
     <span id="vCount"></span>
-    <button class="icon-btn danger" id="vDel" type="button" aria-label="Bild löschen">
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
-    </button>
+    <div class="group">
+      <button class="icon-btn" id="vCrop" type="button" aria-label="Zuschneiden und begradigen">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+      </button>
+      <button class="icon-btn danger" id="vDel" type="button" aria-label="Bild löschen">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+      </button>
+    </div>
   </div>
   <div class="v-stage" id="vStage">
     <img id="vImg" alt="">
@@ -230,25 +286,63 @@ dialog::backdrop{background:rgba(8,12,16,.6)}
     </button>
   </div>
   <div class="v-bottom">
+    <label class="field inline"><span>Kategorie</span><select id="vCat"></select></label>
     <p>Tags – mit Enter oder Komma bestätigen, antippen zum Entfernen</p>
     <div class="tag-editor" id="vEditor"></div>
   </div>
 </dialog>
 
-<!-- Tags für neu hinzugefügte Bilder -->
-<dialog id="batch" class="sheet" aria-labelledby="batchTitle">
-  <h2 id="batchTitle"></h2>
-  <p>Diese Tags bekommen alle neuen Bilder. Einzelne Bilder kannst du später noch anpassen.</p>
-  <div class="tag-editor" id="bEditor" style="margin-top:12px"></div>
-  <div class="row">
-    <button class="btn" id="bSkip" type="button">Überspringen</button>
-    <button class="btn primary" id="bSave" type="button">Tags speichern</button>
+<!-- Scanner -->
+<dialog id="scanner" class="full" aria-labelledby="sTitle">
+  <div class="v-top">
+    <button class="btn small" id="sBack" type="button">Abbrechen</button>
+    <span id="sTitle">Ecken anpassen</span>
+    <button class="btn primary small" id="sNext" type="button">Weiter</button>
+  </div>
+  <div class="v-stage">
+    <canvas id="sCanvas" aria-label="Foto mit vier verschiebbaren Eckpunkten"></canvas>
+    <div id="sResult" hidden></div>
+  </div>
+  <div class="v-bottom" id="sBottom1">
+    <p>Ziehe die vier Punkte genau auf die Ecken des Bildes im Buch. Beim Ziehen zeigt eine Lupe die Stelle vergrößert.</p>
+    <div class="row left">
+      <button class="btn small" id="sFull" type="button">Ganzes Foto</button>
+      <button class="btn small" id="sInset" type="button">Punkte zurücksetzen</button>
+    </div>
+  </div>
+  <div class="v-bottom" id="sBottom2" hidden>
+    <div class="seg" id="sMode" role="radiogroup" aria-label="Darstellung">
+      <button type="button" role="radio" data-mode="original">Original</button>
+      <button type="button" role="radio" data-mode="enhance">Verbessert</button>
+      <button type="button" role="radio" data-mode="bw">Schwarzweiß</button>
+    </div>
+    <div class="row left">
+      <button class="btn small" id="sRotL" type="button">↺ Links drehen</button>
+      <button class="btn small" id="sRotR" type="button">Rechts drehen ↻</button>
+    </div>
   </div>
 </dialog>
 
-<!-- Speicher & Sicherung -->
+<!-- Kategorie und Tags für neue Bilder -->
+<dialog id="batch" class="sheet" aria-labelledby="batchTitle">
+  <h2 id="batchTitle"></h2>
+  <p id="batchHint"></p>
+  <img id="bThumb" class="b-thumb" alt="Vorschau" hidden>
+  <label class="field"><span>Kategorie</span><select id="bCat"></select></label>
+  <div class="field"><span>Tags</span><div class="tag-editor" id="bEditor"></div></div>
+  <div class="row">
+    <button class="btn" id="bSkip" type="button"></button>
+    <button class="btn primary" id="bSave" type="button"></button>
+  </div>
+</dialog>
+
+<!-- Kategorien, Speicher & Sicherung -->
 <dialog id="menu" class="sheet" aria-labelledby="menuTitle">
-  <h2 id="menuTitle">Speicher und Sicherung</h2>
+  <h2 id="menuTitle">Einstellungen</h2>
+  <h3>Kategorien</h3>
+  <ul class="catlist" id="catList"></ul>
+  <button class="btn small" id="catAdd" type="button">Neue Kategorie</button>
+  <h3>Speicher und Sicherung</h3>
   <p id="storageInfo">Speicher wird geprüft …</p>
   <p>Deine Bilder liegen nur in diesem Browser auf diesem Gerät und werden nirgendwohin gesendet. Wenn du die Browserdaten löschst oder die App entfernst, sind sie weg – erstelle deshalb ab und zu eine Sicherung.</p>
   <div class="stack">
@@ -261,10 +355,11 @@ dialog::backdrop{background:rgba(8,12,16,.6)}
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
-const grid = $("#grid"), chips = $("#chips"), empty = $("#empty"), q = $("#q");
+const $$ = s => [...document.querySelectorAll(s)];
+const grid = $("#grid"), chips = $("#chips"), cats = $("#cats"), empty = $("#empty"), q = $("#q");
 const viewer = $("#viewer"), vImg = $("#vImg");
 
-const state = { items: [], selected: new Set(), untagged: false, view: [] };
+const state = { items: [], cats: [], cat: "all", selected: new Set(), untagged: false, view: [] };
 const thumbUrls = new Map();
 let db;
 
@@ -279,6 +374,9 @@ function addTagTo(tags, t) {
   return true;
 }
 const plural = (n, one, many) => n === 1 ? `1 ${one}` : `${n} ${many}`;
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function mkCanvas(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
 
 let toastTimer;
 function toast(msg, sticky) {
@@ -293,11 +391,12 @@ const hideToast = () => $("#toast").classList.remove("show");
 /* ---------- Datenbank (IndexedDB, nur lokal) ---------- */
 function openDB() {
   return new Promise((res, rej) => {
-    const r = indexedDB.open("bildkiste", 1);
+    const r = indexedDB.open("bildkiste", 2);
     r.onupgradeneeded = () => {
       const d = r.result;
-      d.createObjectStore("meta", { keyPath: "id" }); // id, name, created, tags, thumb
-      d.createObjectStore("full");                     // Originalbild je id
+      if (!d.objectStoreNames.contains("meta")) d.createObjectStore("meta", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("full")) d.createObjectStore("full");
+      if (!d.objectStoreNames.contains("cats")) d.createObjectStore("cats", { keyPath: "id" });
     };
     r.onsuccess = () => res(r.result);
     r.onerror = () => rej(r.error);
@@ -311,7 +410,7 @@ function txDone(t) {
     t.onabort = () => rej(t.error || new Error("Abgebrochen"));
   });
 }
-const getAllMeta = () => reqP(db.transaction("meta").objectStore("meta").getAll());
+const getAll = store => reqP(db.transaction(store).objectStore(store).getAll());
 const getFull = id => reqP(db.transaction("full").objectStore("full").get(id));
 function putImage(meta, blob) {
   const t = db.transaction(["meta", "full"], "readwrite");
@@ -319,11 +418,12 @@ function putImage(meta, blob) {
   t.objectStore("full").put(blob, meta.id);
   return txDone(t);
 }
-function putMeta(meta) {
-  const t = db.transaction("meta", "readwrite");
-  t.objectStore("meta").put(meta);
+function putIn(store, obj) {
+  const t = db.transaction(store, "readwrite");
+  t.objectStore(store).put(obj);
   return txDone(t);
 }
+const putMeta = m => putIn("meta", m);
 function deleteImage(id) {
   const t = db.transaction(["meta", "full"], "readwrite");
   t.objectStore("meta").delete(id);
@@ -337,6 +437,58 @@ async function requestPersist() {
   } catch (e) {}
 }
 
+/* ---------- Kategorien ---------- */
+const sortedCats = () => state.cats.slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
+const catById = id => state.cats.find(c => c.id === id);
+const catOf = it => (it.category && catById(it.category)) || null;
+
+async function newCategory() {
+  const name = norm(prompt("Name der neuen Kategorie:") || "");
+  if (!name) return null;
+  const ex = state.cats.find(c => key(c.name) === key(name));
+  if (ex) return ex;
+  const c = { id: uid(), name };
+  await putIn("cats", c);
+  state.cats.push(c);
+  refresh();
+  return c;
+}
+async function renameCategory(c) {
+  const name = norm(prompt("Neuer Name der Kategorie:", c.name) || "");
+  if (!name || name === c.name) return;
+  if (state.cats.some(x => x !== c && key(x.name) === key(name))) { toast("Diese Kategorie gibt es schon."); return; }
+  c.name = name;
+  await putIn("cats", c);
+  refresh();
+}
+async function deleteCategory(c) {
+  if (!confirm(`Kategorie „${c.name}“ löschen? Die Bilder bleiben erhalten und haben danach keine Kategorie.`)) return;
+  for (const it of state.items) if (it.category === c.id) { it.category = null; await putMeta(it); }
+  const t = db.transaction("cats", "readwrite");
+  t.objectStore("cats").delete(c.id);
+  await txDone(t);
+  state.cats = state.cats.filter(x => x !== c);
+  if (state.cat === c.id) state.cat = "all";
+  refresh();
+}
+/* Auswahlfeld für die Kategorie eines Bildes */
+function catSelect(sel, value, onChange) {
+  const opt = (v, t) => { const o = document.createElement("option"); o.value = v; o.textContent = t; return o; };
+  sel.replaceChildren(opt("", "Keine Kategorie"), ...sortedCats().map(c => opt(c.id, c.name)), opt("__new", "Neue Kategorie …"));
+  sel.value = value && catById(value) ? value : "";
+  sel.onchange = async () => {
+    if (sel.value === "__new") {
+      const c = await newCategory();
+      if (!c) { sel.value = value && catById(value) ? value : ""; return; }
+      catSelect(sel, c.id, onChange);
+      onChange(c.id);
+    } else {
+      value = sel.value || null;
+      onChange(value);
+    }
+  };
+}
+
 /* ---------- Bilder ---------- */
 function loadImg(blob) {
   return new Promise((res, rej) => {
@@ -346,15 +498,15 @@ function loadImg(blob) {
     i.src = u;
   });
 }
+async function decode(blob) {
+  try { return await createImageBitmap(blob, { imageOrientation: "from-image" }); }
+  catch (e) { return await loadImg(blob); }
+}
 async function makeThumb(blob) {
-  let src;
-  try { src = await createImageBitmap(blob, { imageOrientation: "from-image" }); }
-  catch (e) { src = await loadImg(blob); }
+  const src = await decode(blob);
   const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height;
   const s = Math.min(1, 480 / Math.max(w, h));
-  const c = document.createElement("canvas");
-  c.width = Math.max(1, Math.round(w * s));
-  c.height = Math.max(1, Math.round(h * s));
+  const c = mkCanvas(Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
   c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
   if (src.close) src.close();
   return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error("Vorschau fehlgeschlagen")), "image/jpeg", 0.82));
@@ -364,23 +516,35 @@ function thumbUrl(it) {
   if (!u) { u = URL.createObjectURL(it.thumb); thumbUrls.set(it.id, u); }
   return u;
 }
+function dropThumb(id) {
+  const u = thumbUrls.get(id);
+  if (u) { URL.revokeObjectURL(u); thumbUrls.delete(id); }
+}
 
 /* ---------- Suche & Filter ---------- */
+function inCat(it) {
+  if (state.cat === "all") return true;
+  if (state.cat === "none") return !catOf(it);
+  return it.category === state.cat;
+}
 function filtered() {
   const words = key(q.value).split(" ").filter(Boolean);
   const sel = [...state.selected];
   return state.items.filter(it => {
+    if (!inCat(it)) return false;
     const keys = it.tags.map(key);
     if (state.untagged && keys.length) return false;
     if (!sel.every(s => keys.includes(s))) return false;
     if (!words.length) return true;
-    const parts = keys.concat(keys.flatMap(k => k.split(" ")));
+    const c = catOf(it);
+    const all = c ? keys.concat(key(c.name)) : keys;
+    const parts = all.concat(all.flatMap(k => k.split(" ")));
     return words.every(w => parts.some(p => p.startsWith(w)));
   }).sort((a, b) => b.created - a.created);
 }
-function tagIndex() {
+function tagIndex(items) {
   const m = new Map();
-  for (const it of state.items) for (const t of it.tags) {
+  for (const it of items) for (const t of it.tags) {
     const k = key(t), e = m.get(k);
     if (e) e.n++; else m.set(k, { name: t, n: 1 });
   }
@@ -388,6 +552,31 @@ function tagIndex() {
 }
 
 /* ---------- Darstellung ---------- */
+function renderCats() {
+  if (state.cat !== "all" && state.cat !== "none" && !catById(state.cat)) state.cat = "all";
+  const noneN = state.items.filter(i => !catOf(i)).length;
+  if (state.cat === "none" && (!noneN || !state.cats.length)) state.cat = "all";
+  const tab = (label, n, val, cls) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    if (cls) b.className = cls;
+    b.textContent = label;
+    if (n != null) { const s = document.createElement("span"); s.className = "n"; s.textContent = n; b.append(s); }
+    if (val != null) {
+      b.setAttribute("aria-current", String(state.cat === val));
+      b.onclick = () => { state.cat = val; state.selected.clear(); state.untagged = false; refresh(); };
+    }
+    return b;
+  };
+  const nodes = [tab("Alle", state.items.length, "all")];
+  for (const c of sortedCats()) nodes.push(tab(c.name, state.items.filter(i => i.category === c.id).length, c.id));
+  if (state.cats.length && noneN) nodes.push(tab("Ohne Kategorie", noneN, "none"));
+  const add = tab("+ Kategorie", null, null, "new");
+  add.onclick = () => newCategory();
+  nodes.push(add);
+  cats.replaceChildren(...nodes);
+  cats.hidden = !state.items.length;
+}
 function chip(label, n, pressed, onClick, plain) {
   const b = document.createElement("button");
   b.type = "button";
@@ -399,9 +588,11 @@ function chip(label, n, pressed, onClick, plain) {
   b.onclick = onClick;
   return b;
 }
-function renderChips(m) {
+function renderChips() {
+  const pool = state.items.filter(inCat);
+  const m = tagIndex(pool);
   for (const k of [...state.selected]) if (!m.has(k)) state.selected.delete(k);
-  const untaggedN = state.items.filter(i => !i.tags.length).length;
+  const untaggedN = pool.filter(i => !i.tags.length).length;
   if (!untaggedN) state.untagged = false;
   const list = [...m.entries()].sort((a, b) =>
     (state.selected.has(b[0]) - state.selected.has(a[0])) || (b[1].n - a[1].n) || a[1].name.localeCompare(b[1].name, "de"));
@@ -420,7 +611,8 @@ function renderGrid() {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "cell";
-    b.setAttribute("aria-label", it.tags.length ? "Bild: " + it.tags.join(", ") : "Bild ohne Tags");
+    const c = catOf(it);
+    b.setAttribute("aria-label", (c ? c.name + ": " : "Bild: ") + (it.tags.length ? it.tags.join(", ") : "ohne Tags"));
     const img = new Image();
     img.loading = "lazy"; img.decoding = "async"; img.alt = "";
     img.src = thumbUrl(it);
@@ -437,26 +629,27 @@ function renderEmpty() {
   const h = document.createElement("h2"), p = document.createElement("p");
   if (!state.items.length) {
     h.textContent = "Noch keine Bilder";
-    p.textContent = "Tippe auf „Bilder hinzufügen“, um Fotos aus deiner Galerie zu laden. Sie bleiben ausschließlich auf diesem Gerät.";
+    p.textContent = "Tippe auf „Scannen“, um ein Bild aus einem Buch abzufotografieren, oder auf „Galerie“, um vorhandene Fotos zu laden. Alles bleibt ausschließlich auf diesem Gerät.";
     empty.append(h, p);
   } else {
     h.textContent = "Keine passenden Bilder";
-    p.textContent = "Kein Bild hat alle gewählten Tags.";
+    p.textContent = "Kein Bild passt zu Kategorie, Tags und Suche.";
     const r = document.createElement("button");
     r.type = "button"; r.className = "btn"; r.textContent = "Filter zurücksetzen";
-    r.onclick = () => { q.value = ""; state.selected.clear(); state.untagged = false; refresh(); };
+    r.onclick = () => { q.value = ""; state.cat = "all"; state.selected.clear(); state.untagged = false; refresh(); };
     empty.append(h, p, r);
   }
 }
 function refresh() {
+  renderCats();
+  renderChips();
   state.view = filtered();
-  const m = tagIndex();
   const n = state.items.length, v = state.view.length;
   $("#count").textContent = !n ? "" : v === n ? plural(n, "Bild", "Bilder") : `${v} von ${n}`;
-  renderChips(m);
   renderGrid();
   renderEmpty();
-  $("#alltags").replaceChildren(...[...m.values()].map(e => { const o = document.createElement("option"); o.value = e.name; return o; }));
+  $("#alltags").replaceChildren(...[...tagIndex(state.items).values()].map(e => { const o = document.createElement("option"); o.value = e.name; return o; }));
+  if ($("#menu").open) renderCatList();
 }
 
 /* ---------- Tag-Eingabe ---------- */
@@ -518,6 +711,11 @@ async function showCurrent() {
   $("#vCount").textContent = `${vCur + 1} von ${vList.length}`;
   $("#vPrev").disabled = vCur === 0;
   $("#vNext").disabled = vCur === vList.length - 1;
+  catSelect($("#vCat"), it.category, async v => {
+    it.category = v;
+    try { await putMeta(it); } catch (e) { toast("Kategorie konnte nicht gespeichert werden."); }
+    refresh();
+  });
   vEditor = tagEditor($("#vEditor"), it.tags, async () => {
     try { await putMeta(it); } catch (e) { toast("Tags konnten nicht gespeichert werden."); }
     vImg.alt = it.tags.length ? it.tags.join(", ") : "Bild ohne Tags";
@@ -541,7 +739,7 @@ viewer.addEventListener("close", () => {
   refresh();
 });
 viewer.addEventListener("keydown", e => {
-  if (e.target.tagName === "INPUT") return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
   if (e.key === "ArrowLeft") step(-1);
   if (e.key === "ArrowRight") step(1);
 });
@@ -557,8 +755,7 @@ $("#vDel").onclick = async () => {
   const it = vList[vCur];
   if (!it || !confirm("Dieses Bild endgültig löschen?")) return;
   try { await deleteImage(it.id); } catch (e) { toast("Löschen fehlgeschlagen."); return; }
-  const u = thumbUrls.get(it.id);
-  if (u) { URL.revokeObjectURL(u); thumbUrls.delete(it.id); }
+  dropThumb(it.id);
   state.items = state.items.filter(x => x.id !== it.id);
   vList.splice(vCur, 1);
   toast("Bild gelöscht.");
@@ -567,9 +764,319 @@ $("#vDel").onclick = async () => {
   refresh();
   showCurrent();
 };
+$("#vCrop").onclick = async () => {
+  const it = vList[vCur];
+  if (!it) return;
+  const blob = await getFull(it.id);
+  if (blob) openScanner(blob, { kind: "replace", item: it });
+};
+
+/* ---------- Scanner: Ecken setzen, begradigen, verbessern ---------- */
+const scanner = $("#scanner"), sCanvas = $("#sCanvas"), sctx = sCanvas.getContext("2d");
+const sc = { lastMode: "enhance" };
+
+async function openScanner(blob, target) {
+  toast("Foto wird geladen …", true);
+  try {
+    const b = await decode(blob);
+    const w = b.naturalWidth || b.width, h = b.naturalHeight || b.height;
+    const s = Math.min(1, 3200 / Math.max(w, h));
+    const src = mkCanvas(Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
+    src.getContext("2d", { willReadFrequently: true }).drawImage(b, 0, 0, src.width, src.height);
+    if (b.close) b.close();
+    const ps = Math.min(1, 2000 / Math.max(src.width, src.height));
+    const prev = mkCanvas(Math.max(1, Math.round(src.width * ps)), Math.max(1, Math.round(src.height * ps)));
+    prev.getContext("2d").drawImage(src, 0, 0, prev.width, prev.height);
+    Object.assign(sc, { src, prev, srcData: null, warped: null, base: null, baseMode: null, out: null, fit: null, drag: -1, rot: 0, mode: sc.lastMode, target });
+  } catch (e) {
+    toast("Das Foto konnte nicht geöffnet werden.");
+    return;
+  }
+  hideToast();
+  resetPts(target.kind === "new");
+  setStep(1);
+  scanner.showModal();
+  requestAnimationFrame(layoutCanvas);
+}
+function setStep(n) {
+  sc.step = n;
+  $("#sTitle").textContent = n === 1 ? "Ecken anpassen" : "Ergebnis";
+  $("#sBack").textContent = n === 1 ? "Abbrechen" : "Zurück";
+  $("#sNext").textContent = n === 1 ? "Weiter" : "Speichern";
+  sCanvas.hidden = n !== 1;
+  $("#sResult").hidden = n !== 2;
+  $("#sBottom1").hidden = n !== 1;
+  $("#sBottom2").hidden = n !== 2;
+  if (n === 1) requestAnimationFrame(layoutCanvas);
+}
+function resetPts(inset) {
+  const W = sc.src.width, H = sc.src.height, m = inset ? Math.min(W, H) * 0.08 : 0;
+  sc.pts = [{ x: m, y: m }, { x: W - m, y: m }, { x: W - m, y: H - m }, { x: m, y: H - m }];
+  drawEditor();
+}
+function layoutCanvas() {
+  if (!sc.src || sc.step !== 1) return;
+  const r = sCanvas.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const dpr = window.devicePixelRatio || 1;
+  sCanvas.width = Math.round(r.width * dpr);
+  sCanvas.height = Math.round(r.height * dpr);
+  const pad = 22, W = sc.src.width, H = sc.src.height;
+  const s = Math.min((r.width - 2 * pad) / W, (r.height - 2 * pad) / H);
+  sc.fit = { s, ox: (r.width - W * s) / 2, oy: (r.height - H * s) / 2, dpr, cw: r.width, ch: r.height };
+  drawEditor();
+}
+const toScreen = p => ({ x: sc.fit.ox + p.x * sc.fit.s, y: sc.fit.oy + p.y * sc.fit.s });
+function toImg(x, y) {
+  const W = sc.src.width, H = sc.src.height;
+  return {
+    x: Math.min(W, Math.max(0, (x - sc.fit.ox) / sc.fit.s)),
+    y: Math.min(H, Math.max(0, (y - sc.fit.oy) / sc.fit.s))
+  };
+}
+function quadPath(P) {
+  sctx.moveTo(P[0].x, P[0].y);
+  for (let i = 1; i < 4; i++) sctx.lineTo(P[i].x, P[i].y);
+  sctx.closePath();
+}
+function drawEditor() {
+  if (!sc.src || !sc.fit) return;
+  const { s, ox, oy, dpr, cw, ch } = sc.fit, W = sc.src.width, H = sc.src.height;
+  const accent = cssVar("--accent") || "#2F6F5E";
+  sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sctx.clearRect(0, 0, cw, ch);
+  sctx.drawImage(sc.prev, ox, oy, W * s, H * s);
+  const P = sc.pts.map(toScreen);
+  sctx.beginPath();
+  sctx.rect(ox, oy, W * s, H * s);
+  quadPath(P);
+  sctx.fillStyle = "rgba(0,0,0,.5)";
+  sctx.fill("evenodd");
+  sctx.beginPath(); quadPath(P);
+  sctx.lineWidth = 2; sctx.strokeStyle = accent; sctx.stroke();
+  P.forEach((p, i) => {
+    sctx.beginPath();
+    sctx.arc(p.x, p.y, i === sc.drag ? 14 : 11, 0, Math.PI * 2);
+    sctx.fillStyle = "rgba(255,255,255,.92)"; sctx.fill();
+    sctx.lineWidth = 3; sctx.strokeStyle = accent; sctx.stroke();
+  });
+  if (sc.drag >= 0) drawLoupe(P[sc.drag], P, accent);
+}
+function drawLoupe(p, P, accent) {
+  const { s, ox, oy, cw } = sc.fit, W = sc.src.width, H = sc.src.height;
+  const R = 64, z = 2.6, m = 14;
+  const nearTopLeft = p.x < m + 2 * R + 24 && p.y < m + 2 * R + 24;
+  const cx = nearTopLeft ? cw - m - R : m + R, cy = m + R;
+  sctx.save();
+  sctx.beginPath(); sctx.arc(cx, cy, R, 0, Math.PI * 2);
+  sctx.fillStyle = "#000"; sctx.fill(); sctx.clip();
+  sctx.translate(cx, cy); sctx.scale(z, z); sctx.translate(-p.x, -p.y);
+  sctx.drawImage(sc.prev, ox, oy, W * s, H * s);
+  sctx.beginPath(); quadPath(P);
+  sctx.lineWidth = 1.5 / z; sctx.strokeStyle = accent; sctx.stroke();
+  sctx.restore();
+  sctx.beginPath(); sctx.arc(cx, cy, R, 0, Math.PI * 2);
+  sctx.lineWidth = 3; sctx.strokeStyle = "#fff"; sctx.stroke();
+  sctx.beginPath();
+  sctx.moveTo(cx - 12, cy); sctx.lineTo(cx + 12, cy);
+  sctx.moveTo(cx, cy - 12); sctx.lineTo(cx, cy + 12);
+  sctx.lineWidth = 3; sctx.strokeStyle = "rgba(0,0,0,.6)"; sctx.stroke();
+  sctx.lineWidth = 1.5; sctx.strokeStyle = "#fff"; sctx.stroke();
+}
+sCanvas.addEventListener("pointerdown", e => {
+  if (!sc.fit) return;
+  const r = sCanvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = -1, bd = 44;
+  sc.pts.forEach((p, i) => { const q2 = toScreen(p), d = Math.hypot(q2.x - x, q2.y - y); if (d < bd) { bd = d; best = i; } });
+  if (best < 0) return;
+  const hp = toScreen(sc.pts[best]);
+  sc.drag = best;
+  sc.grab = { dx: hp.x - x, dy: hp.y - y };
+  sCanvas.setPointerCapture(e.pointerId);
+  e.preventDefault();
+  drawEditor();
+});
+sCanvas.addEventListener("pointermove", e => {
+  if (sc.drag < 0) return;
+  const r = sCanvas.getBoundingClientRect();
+  sc.pts[sc.drag] = toImg(e.clientX - r.left + sc.grab.dx, e.clientY - r.top + sc.grab.dy);
+  drawEditor();
+});
+const endDrag = () => { if (sc.drag >= 0) { sc.drag = -1; drawEditor(); } };
+sCanvas.addEventListener("pointerup", endDrag);
+sCanvas.addEventListener("pointercancel", endDrag);
+window.addEventListener("resize", () => { if (scanner.open) layoutCanvas(); });
+
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+/* Perspektivische Entzerrung: Viereck → Rechteck (bilineare Abtastung) */
+function warp() {
+  const [p0, p1, p2, p3] = sc.pts;
+  let W = Math.max(dist(p0, p1), dist(p3, p2)), H = Math.max(dist(p0, p3), dist(p1, p2));
+  if (W < 8 || H < 8) throw new Error("Auswahl zu klein");
+  const lim = Math.min(1, 3200 / Math.max(W, H));
+  W = Math.max(1, Math.round(W * lim)); H = Math.max(1, Math.round(H * lim));
+  const x0 = p0.x, y0 = p0.y, x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y, x3 = p3.x, y3 = p3.y;
+  const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+  let a, b, c, d, e, f, g, h;
+  if (Math.abs(dx3) < 1e-9 && Math.abs(dy3) < 1e-9) {
+    a = x1 - x0; b = x2 - x1; c = x0; d = y1 - y0; e = y2 - y1; f = y0; g = 0; h = 0;
+  } else {
+    const den = dx1 * dy2 - dx2 * dy1;
+    g = (dx3 * dy2 - dx2 * dy3) / den;
+    h = (dx1 * dy3 - dx3 * dy1) / den;
+    a = x1 - x0 + g * x1; b = x3 - x0 + h * x3; c = x0;
+    d = y1 - y0 + g * y1; e = y3 - y0 + h * y3; f = y0;
+  }
+  if (!sc.srcData) sc.srcData = sc.src.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, sc.src.width, sc.src.height);
+  const sd = sc.srcData.data, sw = sc.src.width, sh = sc.src.height;
+  const out = new ImageData(W, H), od = out.data;
+  let k = 0;
+  for (let y = 0; y < H; y++) {
+    const v = (y + 0.5) / H;
+    for (let x = 0; x < W; x++) {
+      const u = (x + 0.5) / W;
+      const dn = g * u + h * v + 1;
+      let X = (a * u + b * v + c) / dn - 0.5, Y = (d * u + e * v + f) / dn - 0.5;
+      if (X < 0) X = 0; else if (X > sw - 1) X = sw - 1;
+      if (Y < 0) Y = 0; else if (Y > sh - 1) Y = sh - 1;
+      const xi = X | 0, yi = Y | 0, fx = X - xi, fy = Y - yi;
+      const xj = xi < sw - 1 ? xi + 1 : xi, yj = yi < sh - 1 ? yi + 1 : yi;
+      const i00 = (yi * sw + xi) * 4, i10 = (yi * sw + xj) * 4, i01 = (yj * sw + xi) * 4, i11 = (yj * sw + xj) * 4;
+      const w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+      od[k]     = sd[i00] * w00 + sd[i10] * w10 + sd[i01] * w01 + sd[i11] * w11;
+      od[k + 1] = sd[i00 + 1] * w00 + sd[i10 + 1] * w10 + sd[i01 + 1] * w01 + sd[i11 + 1] * w11;
+      od[k + 2] = sd[i00 + 2] * w00 + sd[i10 + 2] * w10 + sd[i01 + 2] * w01 + sd[i11 + 2] * w11;
+      od[k + 3] = 255;
+      k += 4;
+    }
+  }
+  return out;
+}
+function pct(hist, total, p) {
+  const target = total * p;
+  let acc = 0;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= target) return v; }
+  return 255;
+}
+function makeLut(lo, hi, gamma) {
+  const lut = new Uint8ClampedArray(256);
+  if (hi - lo < 30) { for (let v = 0; v < 256; v++) lut[v] = v; return lut; }
+  for (let v = 0; v < 256; v++) {
+    const t = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
+    lut[v] = Math.round(Math.pow(t, gamma) * 255);
+  }
+  return lut;
+}
+/* Verbessert: Weißabgleich + Kontrast je Farbkanal (gelbliches Papier wird weiß). Schwarzweiß: Graustufen mit kräftigem Kontrast. */
+function applyFilter(img, mode) {
+  if (mode === "original") return img;
+  const d = img.data, n = d.length, out = new ImageData(img.width, img.height), o = out.data;
+  if (mode === "enhance") {
+    const luts = [0, 1, 2].map(ch => {
+      const hist = new Uint32Array(256); let cnt = 0;
+      for (let i = ch; i < n; i += 16) { hist[d[i]]++; cnt++; }
+      return makeLut(pct(hist, cnt, 0.005), pct(hist, cnt, 0.995), 1);
+    });
+    const [lr, lg, lb] = luts;
+    for (let i = 0; i < n; i += 4) { o[i] = lr[d[i]]; o[i + 1] = lg[d[i + 1]]; o[i + 2] = lb[d[i + 2]]; o[i + 3] = 255; }
+  } else {
+    const px = n / 4, gray = new Uint8Array(px), hist = new Uint32Array(256);
+    for (let i = 0, j = 0; i < n; i += 4, j++) { const v = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8; gray[j] = v; hist[v]++; }
+    const lut = makeLut(pct(hist, px, 0.01), pct(hist, px, 0.99), 1.15);
+    for (let i = 0, j = 0; i < n; i += 4, j++) { const v = lut[gray[j]]; o[i] = o[i + 1] = o[i + 2] = v; o[i + 3] = 255; }
+  }
+  return out;
+}
+function rotateCanvas(c, rot) {
+  rot = ((rot % 4) + 4) % 4;
+  if (!rot) return c;
+  const o = rot % 2 ? mkCanvas(c.height, c.width) : mkCanvas(c.width, c.height);
+  const x = o.getContext("2d");
+  x.translate(o.width / 2, o.height / 2);
+  x.rotate(rot * Math.PI / 2);
+  x.drawImage(c, -c.width / 2, -c.height / 2);
+  return o;
+}
+function renderResult() {
+  if (!sc.base || sc.baseMode !== sc.mode) {
+    const f = applyFilter(sc.warped, sc.mode);
+    sc.base = mkCanvas(f.width, f.height);
+    sc.base.getContext("2d").putImageData(f, 0, 0);
+    sc.baseMode = sc.mode;
+  }
+  sc.out = rotateCanvas(sc.base, sc.rot);
+  sc.out.setAttribute("aria-label", "Vorschau des Scans");
+  $("#sResult").replaceChildren(sc.out);
+  $$("#sMode button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.mode === sc.mode)));
+}
+$$("#sMode button").forEach(b => b.onclick = () => { sc.mode = b.dataset.mode; renderResult(); });
+$("#sRotL").onclick = () => { sc.rot--; renderResult(); };
+$("#sRotR").onclick = () => { sc.rot++; renderResult(); };
+$("#sFull").onclick = () => resetPts(false);
+$("#sInset").onclick = () => resetPts(true);
+$("#sBack").onclick = () => { if (sc.step === 2) setStep(1); else scanner.close(); };
+$("#sNext").onclick = async () => {
+  const btn = $("#sNext");
+  btn.disabled = true;
+  try {
+    if (sc.step === 1) {
+      toast("Wird begradigt …", true);
+      await nextFrame();
+      try { sc.warped = warp(); }
+      catch (e) { toast("Die Auswahl ist zu klein. Ziehe die Punkte weiter auseinander."); return; }
+      sc.base = null;
+      renderResult();
+      hideToast();
+      setStep(2);
+    } else {
+      await saveScan();
+    }
+  } finally { btn.disabled = false; }
+};
+async function saveScan() {
+  toast("Wird gespeichert …", true);
+  await nextFrame();
+  try {
+    const blob = await new Promise((res, rej) => sc.out.toBlob(b => b ? res(b) : rej(new Error()), "image/jpeg", 0.92));
+    const thumb = await makeThumb(blob);
+    sc.lastMode = sc.mode;
+    requestPersist();
+    if (sc.target.kind === "replace") {
+      const it = sc.target.item;
+      it.thumb = thumb;
+      await putImage(it, blob);
+      dropThumb(it.id);
+      scanner.close();
+      refresh();
+      await showCurrent();
+      toast("Bild aktualisiert.");
+    } else {
+      const meta = { id: uid(), name: "Scan " + new Date().toLocaleString("de-DE"), created: Date.now(), tags: [], category: null, thumb };
+      await putImage(meta, blob);
+      state.items.push(meta);
+      scanner.close();
+      refresh();
+      hideToast();
+      openBatch([meta.id], true);
+    }
+  } catch (e) {
+    toast("Speichern fehlgeschlagen – eventuell ist der Speicher voll.");
+  }
+}
+scanner.addEventListener("close", () => {
+  Object.assign(sc, { src: null, prev: null, srcData: null, warped: null, base: null, out: null, fit: null });
+  $("#sResult").replaceChildren();
+});
 
 /* ---------- Bilder hinzufügen ---------- */
-$("#addBtn").onclick = () => $("#file").click();
+$("#scanBtn").onclick = () => $("#camera").click();
+$("#galleryBtn").onclick = () => $("#file").click();
+$("#camera").addEventListener("change", e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (f) openScanner(f, { kind: "new" });
+});
 $("#file").addEventListener("change", async e => {
   const files = [...e.target.files];
   e.target.value = "";
@@ -583,7 +1090,7 @@ $("#file").addEventListener("change", async e => {
     try {
       const blob = new Blob([f], { type: f.type || "image/jpeg" });
       const thumb = await makeThumb(blob);
-      const meta = { id: uid(), name: f.name, created: Date.now(), tags: [], thumb };
+      const meta = { id: uid(), name: f.name, created: Date.now(), tags: [], category: null, thumb };
       await putImage(meta, blob);
       state.items.push(meta);
       ids.push(meta.id);
@@ -592,33 +1099,74 @@ $("#file").addEventListener("change", async e => {
   hideToast();
   refresh();
   if (failed) toast(`${plural(failed, "Datei konnte", "Dateien konnten")} nicht gelesen werden.`);
-  if (ids.length) openBatch(ids);
+  if (ids.length) openBatch(ids, false);
 });
 
-function openBatch(ids) {
-  const dlg = $("#batch"), tags = [];
-  $("#batchTitle").textContent = plural(ids.length, "Bild", "Bilder") + " hinzugefügt";
+/* Kategorie & Tags für neue Bilder – merkt sich die letzte Wahl (praktisch beim Scannen eines ganzen Buches) */
+let lastBatch = { category: null, tags: [] };
+function openBatch(ids, fromScan) {
+  const dlg = $("#batch");
+  const tags = lastBatch.tags.slice();
+  let cat = lastBatch.category && catById(lastBatch.category) ? lastBatch.category : null;
+  $("#batchTitle").textContent = fromScan ? "Scan gespeichert" : plural(ids.length, "Bild", "Bilder") + " hinzugefügt";
+  $("#batchHint").textContent = ids.length > 1
+    ? "Kategorie und Tags gelten für alle neuen Bilder. Einzelne Bilder kannst du später anpassen."
+    : "Kategorie und Tags kannst du später jederzeit ändern.";
+  const th = $("#bThumb");
+  if (ids.length === 1) { const it = state.items.find(x => x.id === ids[0]); th.src = thumbUrl(it); th.hidden = false; }
+  else th.hidden = true;
+  catSelect($("#bCat"), cat, v => { cat = v; });
   const ed = tagEditor($("#bEditor"), tags, () => {});
-  $("#bSkip").onclick = () => dlg.close();
-  $("#bSave").onclick = async () => {
+  const apply = async () => {
     ed.commit();
-    if (tags.length) {
-      for (const id of ids) {
-        const it = state.items.find(x => x.id === id);
-        if (!it) continue;
-        tags.forEach(t => addTagTo(it.tags, t));
-        try { await putMeta(it); } catch (e) {}
-      }
-      refresh();
-      toast("Tags gespeichert.");
+    lastBatch = { category: cat, tags: tags.slice() };
+    for (const id of ids) {
+      const it = state.items.find(x => x.id === id);
+      if (!it) continue;
+      if (cat) it.category = cat;
+      tags.forEach(t => addTagTo(it.tags, t));
+      try { await putMeta(it); } catch (e) {}
     }
-    dlg.close();
+    refresh();
   };
+  if (fromScan) {
+    $("#bSkip").textContent = "Fertig";
+    $("#bSave").textContent = "Nächste Seite scannen";
+    $("#bSkip").onclick = async () => { dlg.close(); await apply(); toast("Gespeichert."); };
+    $("#bSave").onclick = () => { ed.commit(); dlg.close(); $("#camera").click(); apply(); };
+  } else {
+    $("#bSkip").textContent = "Überspringen";
+    $("#bSave").textContent = "Speichern";
+    $("#bSkip").onclick = () => dlg.close();
+    $("#bSave").onclick = async () => { dlg.close(); await apply(); toast("Gespeichert."); };
+  }
   dlg.showModal();
 }
 
-/* ---------- Speicher & Sicherung ---------- */
+/* ---------- Einstellungen: Kategorien, Speicher & Sicherung ---------- */
+function renderCatList() {
+  const ul = $("#catList");
+  if (!state.cats.length) {
+    const li = document.createElement("li");
+    li.textContent = "Noch keine Kategorien.";
+    ul.replaceChildren(li);
+    return;
+  }
+  ul.replaceChildren(...sortedCats().map(c => {
+    const li = document.createElement("li");
+    const name = document.createElement("span"); name.textContent = c.name;
+    const n = document.createElement("small"); n.textContent = state.items.filter(i => i.category === c.id).length;
+    const ren = document.createElement("button"); ren.type = "button"; ren.className = "btn small"; ren.textContent = "Umbenennen";
+    ren.onclick = () => renameCategory(c);
+    const del = document.createElement("button"); del.type = "button"; del.className = "btn small"; del.textContent = "Löschen";
+    del.onclick = () => deleteCategory(c);
+    li.append(name, n, ren, del);
+    return li;
+  }));
+}
+$("#catAdd").onclick = () => newCategory();
 $("#menuBtn").onclick = async () => {
+  renderCatList();
   $("#menu").showModal();
   const info = $("#storageInfo");
   let txt = plural(state.items.length, "Bild", "Bilder") + " gespeichert.";
@@ -654,12 +1202,12 @@ function dataURLtoBlob(u) {
 $("#exportBtn").onclick = async () => {
   if (!state.items.length) { toast("Es gibt noch nichts zu sichern."); return; }
   try {
-    const out = { app: "bildkiste", version: 1, exported: new Date().toISOString(), images: [] };
+    const out = { app: "bildkiste", version: 2, exported: new Date().toISOString(), categories: state.cats, images: [] };
     let i = 0;
     for (const it of state.items) {
       toast(`Sicherung: ${++i} von ${state.items.length} …`, true);
       const b = await getFull(it.id);
-      out.images.push({ id: it.id, name: it.name, created: it.created, tags: it.tags, data: b ? await toDataURL(b) : null });
+      out.images.push({ id: it.id, name: it.name, created: it.created, category: it.category || null, tags: it.tags, data: b ? await toDataURL(b) : null });
     }
     const blob = new Blob([JSON.stringify(out)], { type: "application/json" });
     const a = document.createElement("a");
@@ -685,6 +1233,12 @@ $("#importFile").addEventListener("change", async e => {
     toast("Das ist keine Sicherung aus der Bildkiste.");
     return;
   }
+  for (const c of Array.isArray(data.categories) ? data.categories : []) {
+    if (!c || !c.id || !c.name || catById(c.id)) continue;
+    const nc = { id: String(c.id), name: norm(c.name) };
+    await putIn("cats", nc);
+    state.cats.push(nc);
+  }
   const have = new Set(state.items.map(i => i.id));
   let added = 0, skipped = 0;
   for (const x of data.images) {
@@ -695,7 +1249,10 @@ $("#importFile").addEventListener("change", async e => {
       const thumb = await makeThumb(blob);
       const tags = [];
       (Array.isArray(x.tags) ? x.tags : []).forEach(t => addTagTo(tags, t));
-      const meta = { id: x.id || uid(), name: x.name || "", created: Number(x.created) || Date.now(), tags, thumb };
+      const meta = {
+        id: x.id || uid(), name: x.name || "", created: Number(x.created) || Date.now(),
+        category: x.category && catById(x.category) ? x.category : null, tags, thumb
+      };
       await putImage(meta, blob);
       state.items.push(meta);
       added++;
@@ -712,11 +1269,13 @@ q.addEventListener("input", refresh);
 (async () => {
   try {
     db = await openDB();
-    state.items = await getAllMeta();
+    state.items = await getAll("meta");
+    state.cats = await getAll("cats");
   } catch (e) {
     empty.hidden = false;
     empty.textContent = "Der Speicher dieses Browsers ist nicht verfügbar. Im privaten Modus oder bei manchen Browsern, die Dateien direkt vom Gerät öffnen, kann die Bildkiste nichts speichern.";
-    $("#addBtn").disabled = true;
+    $("#scanBtn").disabled = true;
+    $("#galleryBtn").disabled = true;
     return;
   }
   refresh();
