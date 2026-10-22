@@ -379,12 +379,26 @@ const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(
 function mkCanvas(w, h) { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
 
 let toastTimer;
-function toast(msg, sticky) {
+function toast(msg, sticky, ms) {
   const el = $("#toast");
   el.textContent = msg;
   el.classList.add("show");
   clearTimeout(toastTimer);
-  if (!sticky) toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+  if (!sticky) toastTimer = setTimeout(() => el.classList.remove("show"), ms || 2600);
+}
+const errText = e => e ? [e.name, e.message].filter(Boolean).join(": ").slice(0, 120) : "unbekannter Fehler";
+const isHeic = f => /hei[cf]/i.test(f.type || "") || /\.hei[cf]$/i.test(f.name || "");
+function showFatal(msg) {
+  empty.hidden = false;
+  empty.replaceChildren();
+  const h = document.createElement("h2"); h.textContent = "Speicher nicht bereit";
+  const p = document.createElement("p"); p.textContent = msg;
+  empty.append(h, p);
+}
+function ensureDB() {
+  if (db) return true;
+  toast("Der Speicher ist nicht bereit. Schließe die Bildkiste überall (auch in anderen Tabs) und öffne sie neu.", false, 6000);
+  return false;
 }
 const hideToast = () => $("#toast").classList.remove("show");
 
@@ -398,7 +412,12 @@ function openDB() {
       if (!d.objectStoreNames.contains("full")) d.createObjectStore("full");
       if (!d.objectStoreNames.contains("cats")) d.createObjectStore("cats", { keyPath: "id" });
     };
-    r.onsuccess = () => res(r.result);
+    r.onblocked = () => showFatal("Eine ältere Version der Bildkiste ist noch geöffnet und blockiert das Update. Schließe die Bildkiste in allen Tabs und Fenstern (auch in der Liste der zuletzt genutzten Apps) und öffne sie dann neu.");
+    r.onsuccess = () => {
+      const d = r.result;
+      d.onversionchange = () => { d.close(); db = null; showFatal("Eine neuere Version wurde geöffnet. Bitte lade diese Seite neu."); };
+      res(d);
+    };
     r.onerror = () => rej(r.error);
   });
 }
@@ -410,12 +429,25 @@ function txDone(t) {
     t.onabort = () => rej(t.error || new Error("Abgebrochen"));
   });
 }
+function blobToBuf(b) {
+  if (b.arrayBuffer) return b.arrayBuffer();
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsArrayBuffer(b); });
+}
+async function toRec(b) { return { type: b.type || "image/jpeg", buf: await blobToBuf(b) }; }
+function fromRec(r) {
+  if (!r) return null;
+  if (r instanceof Blob) return r;            // ältere Einträge
+  if (r.buf) return new Blob([r.buf], { type: r.type || "image/jpeg" });
+  return null;
+}
+async function metaRec(meta) { return Object.assign({}, meta, { thumb: await toRec(meta.thumb) }); }
 const getAll = store => reqP(db.transaction(store).objectStore(store).getAll());
-const getFull = id => reqP(db.transaction("full").objectStore("full").get(id));
-function putImage(meta, blob) {
+const getFull = async id => fromRec(await reqP(db.transaction("full").objectStore("full").get(id)));
+async function putImage(meta, blob) {
+  const m = await metaRec(meta), f = await toRec(blob);
   const t = db.transaction(["meta", "full"], "readwrite");
-  t.objectStore("meta").put(meta);
-  t.objectStore("full").put(blob, meta.id);
+  t.objectStore("meta").put(m);
+  t.objectStore("full").put(f, meta.id);
   return txDone(t);
 }
 function putIn(store, obj) {
@@ -423,7 +455,7 @@ function putIn(store, obj) {
   t.objectStore(store).put(obj);
   return txDone(t);
 }
-const putMeta = m => putIn("meta", m);
+const putMeta = async m => putIn("meta", await metaRec(m));
 function deleteImage(id) {
   const t = db.transaction(["meta", "full"], "readwrite");
   t.objectStore("meta").delete(id);
@@ -498,12 +530,15 @@ function loadImg(blob) {
     i.src = u;
   });
 }
-async function decode(blob) {
-  try { return await createImageBitmap(blob, { imageOrientation: "from-image" }); }
-  catch (e) { return await loadImg(blob); }
+async function decode(blob, opts) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(blob, Object.assign({ imageOrientation: "from-image" }, opts)); } catch (e) {}
+    try { return await createImageBitmap(blob, opts); } catch (e) {}
+  }
+  return await loadImg(blob);
 }
 async function makeThumb(blob) {
-  const src = await decode(blob);
+  const src = await decode(blob, { resizeWidth: 480, resizeQuality: "medium" });
   const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height;
   const s = Math.min(1, 480 / Math.max(w, h));
   const c = mkCanvas(Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
@@ -779,6 +814,7 @@ async function openScanner(blob, target) {
   toast("Foto wird geladen …", true);
   try {
     const b = await decode(blob);
+    if (!(b.naturalWidth || b.width)) throw new Error("Bild leer");
     const w = b.naturalWidth || b.width, h = b.naturalHeight || b.height;
     const s = Math.min(1, 3200 / Math.max(w, h));
     const src = mkCanvas(Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
@@ -789,7 +825,7 @@ async function openScanner(blob, target) {
     prev.getContext("2d").drawImage(src, 0, 0, prev.width, prev.height);
     Object.assign(sc, { src, prev, srcData: null, warped: null, base: null, baseMode: null, out: null, fit: null, drag: -1, rot: 0, mode: sc.lastMode, target });
   } catch (e) {
-    toast("Das Foto konnte nicht geöffnet werden.");
+    toast(`Das Foto konnte nicht geöffnet werden (${errText(e)}).`, false, 7000);
     return;
   }
   hideToast();
@@ -1037,9 +1073,13 @@ $("#sNext").onclick = async () => {
 async function saveScan() {
   toast("Wird gespeichert …", true);
   await nextFrame();
+  if (!ensureDB()) return;
+  let stage = "Bild erzeugen";
   try {
-    const blob = await new Promise((res, rej) => sc.out.toBlob(b => b ? res(b) : rej(new Error()), "image/jpeg", 0.92));
+    const blob = await new Promise((res, rej) => sc.out.toBlob(b => b ? res(b) : rej(new Error("toBlob lieferte nichts")), "image/jpeg", 0.92));
+    stage = "Vorschau erzeugen";
     const thumb = await makeThumb(blob);
+    stage = "In Speicher schreiben";
     sc.lastMode = sc.mode;
     requestPersist();
     if (sc.target.kind === "replace") {
@@ -1061,7 +1101,7 @@ async function saveScan() {
       openBatch([meta.id], true);
     }
   } catch (e) {
-    toast("Speichern fehlgeschlagen – eventuell ist der Speicher voll.");
+    toast(`Speichern fehlgeschlagen beim Schritt „${stage}“ (${errText(e)}).`, false, 9000);
   }
 }
 scanner.addEventListener("close", () => {
@@ -1070,8 +1110,8 @@ scanner.addEventListener("close", () => {
 });
 
 /* ---------- Bilder hinzufügen ---------- */
-$("#scanBtn").onclick = () => $("#camera").click();
-$("#galleryBtn").onclick = () => $("#file").click();
+$("#scanBtn").onclick = () => { if (ensureDB()) $("#camera").click(); };
+$("#galleryBtn").onclick = () => { if (ensureDB()) $("#file").click(); };
 $("#camera").addEventListener("change", e => {
   const f = e.target.files[0];
   e.target.value = "";
@@ -1083,22 +1123,25 @@ $("#file").addEventListener("change", async e => {
   if (!files.length) return;
   requestPersist();
   const ids = [];
-  let failed = 0;
+  let readFail = 0, heic = 0, storeFail = 0, lastErr = null;
   for (let i = 0; i < files.length; i++) {
     toast(`Speichere ${i + 1} von ${files.length} …`, true);
     const f = files[i];
-    try {
-      const blob = new Blob([f], { type: f.type || "image/jpeg" });
-      const thumb = await makeThumb(blob);
-      const meta = { id: uid(), name: f.name, created: Date.now(), tags: [], category: null, thumb };
-      await putImage(meta, blob);
-      state.items.push(meta);
-      ids.push(meta.id);
-    } catch (err) { failed++; }
+    const blob = new Blob([f], { type: f.type || "image/jpeg" });
+    let thumb;
+    try { thumb = await makeThumb(blob); }
+    catch (err) { readFail++; if (isHeic(f)) heic++; continue; }
+    const meta = { id: uid(), name: f.name, created: Date.now(), tags: [], category: null, thumb };
+    try { await putImage(meta, blob); }
+    catch (err) { storeFail++; lastErr = err; continue; }
+    state.items.push(meta);
+    ids.push(meta.id);
   }
   hideToast();
   refresh();
-  if (failed) toast(`${plural(failed, "Datei konnte", "Dateien konnten")} nicht gelesen werden.`);
+  if (storeFail) toast(`${plural(storeFail, "Bild konnte", "Bilder konnten")} nicht gespeichert werden (${errText(lastErr)}).`, false, 8000);
+  else if (heic) toast("HEIC-Fotos kann dieser Browser nicht lesen. Stelle in der Kamera-App das Bildformat auf JPEG um.", false, 8000);
+  else if (readFail) toast(`${plural(readFail, "Datei konnte", "Dateien konnten")} nicht gelesen werden.`, false, 6000);
   if (ids.length) openBatch(ids, false);
 });
 
@@ -1268,14 +1311,13 @@ q.addEventListener("input", refresh);
 
 (async () => {
   try {
+    if (!window.indexedDB) throw new Error("IndexedDB fehlt");
     db = await openDB();
-    state.items = await getAll("meta");
+    state.items = (await getAll("meta")).map(m => Object.assign(m, { thumb: fromRec(m.thumb), tags: Array.isArray(m.tags) ? m.tags : [] })).filter(m => m.thumb);
     state.cats = await getAll("cats");
   } catch (e) {
-    empty.hidden = false;
-    empty.textContent = "Der Speicher dieses Browsers ist nicht verfügbar. Im privaten Modus oder bei manchen Browsern, die Dateien direkt vom Gerät öffnen, kann die Bildkiste nichts speichern.";
-    $("#scanBtn").disabled = true;
-    $("#galleryBtn").disabled = true;
+    db = null;
+    showFatal(`Dieser Browser erlaubt der Bildkiste keinen Speicher (${errText(e)}). Das passiert im privaten/Inkognito-Modus oder wenn die Datei direkt aus einem Dateimanager geöffnet wird. Öffne die Bildkiste über ihre Internetadresse in Chrome in einem normalen Tab.`);
     return;
   }
   refresh();
